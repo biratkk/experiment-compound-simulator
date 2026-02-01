@@ -1,0 +1,12 @@
+{
+  "name": "molecule-environment",
+  "version": "1.0.0",
+  "description": "Interactive 3D molecular simulation using Three.js",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "mkdir -p dist && cp h2o.html dist/index.html"
+  },
+  "keywords": ["molecule", "webgl", "three.js", "simulation"],
+  "license": "MIT"
+}
