@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecule Environment - WebGL Visualization</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #1a1a2e;
+        }
+        canvas {
+            display: block;
+        }
+        #controls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 0;
+            height: 100vh;
+            overflow-y: auto;
+            min-width: 280px;
+            box-sizing: border-box;
+        }
+        #controls h2 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+        .compound-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+        }
+        .compound-row:last-child {
+            border-bottom: none;
+        }
+        .compound-name {
+            flex: 1;
+            font-size: 13px;
+        }
+        .compound-formula {
+            font-weight: bold;
+            color: #fff;
+        }
+        .compound-fullname {
+            color: #888;
+            font-size: 11px;
+        }
+        .compound-charge {
+            font-size: 9px;
+            color: #aaa;
+        }
+        .compound-quantity {
+            width: 40px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 4px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 3px;
+            transition: background 0.2s;
+        }
+        .btn-add {
+            background: #4CAF50;
+            color: white;
+        }
+        .btn-add:hover {
+            background: #45a049;
+        }
+        .btn-remove {
+            background: #f44336;
+            color: white;
+        }
+        .btn-remove:hover {
+            background: #da190b;
+        }
+        .btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        .btn-bulk {
+            font-size: 12px;
+            width: 24px;
+        }
+        #total-count {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #444;
+            font-size: 12px;
+            color: #aaa;
+        }
+        #instructions {
+            margin-top: 10px;
+            font-size: 11px;
+            color: #666;
+        }
+        #energy-control {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+        #energy-control label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        #energy-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, #3333ff, #33ff33, #ffff33, #ff9900, #ff3333);
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+        }
+        #energy-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        #energy-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        #temperature {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #aaa;
+            text-align: center;
+        }
+        #gravity-control {
+            margin-top: 10px;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+        #gravity-control label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        #gravity-select {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            background: #2a2a4e;
+            color: white;
+            cursor: pointer;
+        }
+        #gravity-select:hover {
+            background: #3a3a5e;
+        }
+        .gravity-angle-row {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .angle-label {
+            width: 50px;
+            font-size: 12px;
+            color: #aaa;
+        }
+        .gravity-angle-row input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(to right, #ff6666, #ffff66, #66ff66, #66ffff, #6666ff, #ff66ff, #ff6666);
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+            margin: 0 8px;
+        }
+        .gravity-angle-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .gravity-angle-row input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: none;
+        }
+        .angle-value {
+            width: 40px;
+            text-align: right;
+            font-size: 12px;
+            color: #4CAF50;
+        }
+        #gravity-direction {
+            margin-top: 8px;
+            font-size: 14px;
+            text-align: center;
+            color: #aaa;
+        }
+        #dimensions-control {
+            margin-top: 10px;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+        #dimensions-control > label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .dimension-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .dimension-row:last-child {
+            margin-bottom: 0;
+        }
+        .dim-label {
+            width: 75px;
+            font-size: 12px;
+            color: #aaa;
+        }
+        .dimension-row input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #3a3a5e;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+            margin: 0 8px;
+        }
+        .dimension-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+        }
+        .dimension-row input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+            border: none;
+        }
+        .dim-value {
+            width: 30px;
+            text-align: right;
+            font-size: 12px;
+            color: #4CAF50;
+        }
+        #reset-btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #reset-btn:hover {
+            background: #f57c00;
+        }
+        #physics-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            font-size: 11px;
+            color: #aaa;
+        }
+        #physics-info div {
+            margin: 3px 0;
+        }
+        .positive { color: #ff6666; }
+        .negative { color: #6666ff; }
+        .neutral { color: #888; }
+
+        /* Presets Panel */
+        #presets-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 280px;
+            height: 100vh;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 0;
+            padding: 15px;
+            color: white;
+            font-family: Arial, sans-serif;
+            box-sizing: border-box;
+        }
+
+        /* Custom scrollbar styling */
+        #controls::-webkit-scrollbar,
+        #presets-panel::-webkit-scrollbar {
+            width: 6px;
+            background: #000;
+        }
+        #controls::-webkit-scrollbar-track,
+        #presets-panel::-webkit-scrollbar-track {
+            background: #000;
+        }
+        #controls::-webkit-scrollbar-thumb,
+        #presets-panel::-webkit-scrollbar-thumb {
+            background: rgba(76, 175, 80, 0.5);
+            border-radius: 3px;
+        }
+        #controls::-webkit-scrollbar-thumb:hover,
+        #presets-panel::-webkit-scrollbar-thumb:hover {
+            background: rgba(76, 175, 80, 0.8);
+        }
+        /* Firefox scrollbar */
+        #controls,
+        #presets-panel {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(76, 175, 80, 0.5) #000;
+        }
+        #presets-panel h2 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+        .preset-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .preset-item:last-child {
+            margin-bottom: 0;
+        }
+        .preset-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .preset-name {
+            font-weight: bold;
+            font-size: 13px;
+            color: #4CAF50;
+        }
+        .preset-controls {
+            display: flex;
+            gap: 5px;
+        }
+        .preset-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .preset-btn-play {
+            background: #4CAF50;
+            color: white;
+        }
+        .preset-btn-play:hover:not(:disabled) {
+            background: #45a049;
+        }
+        .preset-btn-play.playing {
+            background: #ff9800;
+        }
+        .preset-btn-play.playing:hover:not(:disabled) {
+            background: #f57c00;
+        }
+        .preset-btn-stop {
+            background: #f44336;
+            color: white;
+        }
+        .preset-btn-stop:hover:not(:disabled) {
+            background: #da190b;
+        }
+        .preset-btn:disabled {
+            background: #555;
+            color: #888;
+            cursor: not-allowed;
+        }
+        .preset-description {
+            font-size: 11px;
+            color: #888;
+            line-height: 1.4;
+        }
+        .preset-item.active {
+            border: 1px solid #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+        .preset-progress {
+            height: 3px;
+            background: #333;
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .preset-progress-bar {
+            height: 100%;
+            background: #4CAF50;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <h2>Molecule Environment</h2>
+        <div id="compound-list"></div>
+        <div id="total-count">Total molecules: 0</div>
+        <div id="energy-control">
+            <label for="energy-slider">System Energy: <span id="energy-value">50</span>%</label>
+            <input type="range" id="energy-slider" min="0" max="100" value="50">
+            <div id="temperature">~298 K (Room Temp)</div>
+        </div>
+        <div id="gravity-control">
+            <label for="gravity-select">Gravitational Pull:</label>
+            <select id="gravity-select">
+                <option value="0">None (Zero-G)</option>
+                <option value="1.62">Moon (1.62 m/s²)</option>
+                <option value="9.81" selected>Earth (9.81 m/s²)</option>
+                <option value="24.79">Jupiter (24.79 m/s²)</option>
+            </select>
+            <div class="gravity-angle-row">
+                <span class="angle-label">Angle:</span>
+                <input type="range" id="gravity-angle" min="0" max="360" value="180">
+                <span class="angle-value" id="gravity-angle-value">180°</span>
+            </div>
+            <div id="gravity-direction">↓ Down</div>
+        </div>
+        <div id="dimensions-control">
+            <label>Container Dimensions:</label>
+            <div class="dimension-row">
+                <span class="dim-label">Width (X):</span>
+                <input type="range" id="dim-x" min="1" max="8" value="5" step="0.5">
+                <span class="dim-value" id="dim-x-value">5.0</span>
+            </div>
+            <div class="dimension-row">
+                <span class="dim-label">Height (Y):</span>
+                <input type="range" id="dim-y" min="1" max="8" value="5" step="0.5">
+                <span class="dim-value" id="dim-y-value">5.0</span>
+            </div>
+            <div class="dimension-row">
+                <span class="dim-label">Depth (Z):</span>
+                <input type="range" id="dim-z" min="1" max="8" value="5" step="0.5">
+                <span class="dim-value" id="dim-z-value">5.0</span>
+            </div>
+        </div>
+        <button id="reset-btn">Reset All</button>
+        <div id="physics-info">
+            <div><strong>Physics:</strong></div>
+            <div>Coulomb: F = kq₁q₂/r²</div>
+            <div>Lennard-Jones repulsion</div>
+            <div class="positive">● Positive charge</div>
+            <div class="negative">● Negative charge</div>
+            <div class="neutral">● Neutral/Nonpolar</div>
+        </div>
+        <div id="instructions">Drag to rotate | Scroll to zoom</div>
+    </div>
+
+    <div id="presets-panel">
+        <h2>Presets</h2>
+        <div id="presets-list"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // Physics constants
+        const SCALE = 0.2; // 5x smaller
+        const COULOMB_K = 0.5; // Coulomb constant (scaled for simulation)
+        const LJ_EPSILON = 0.02; // Lennard-Jones well depth
+        const LJ_SIGMA = 0.3; // Lennard-Jones distance parameter
+        const DAMPING = 0.995; // Velocity damping (reduced to let energy persist)
+        const DT = 0.016; // Time step
+        const MAX_FORCE = 2.0; // Cap forces to prevent instability
+
+        // Container dimensions (half-extents)
+        let boundaryX = 2.5;
+        let boundaryY = 2.5;
+        let boundaryZ = 2.5;
+
+        // Energy system
+        let systemEnergy = 50; // 0-100 scale
+        const MIN_TEMP = 0;    // 0K (absolute zero)
+        const MAX_TEMP = 4000; // 4000K (extremely hot)
+
+        // Gravity system
+        let gravity = 9.81; // Default to Earth gravity
+        let gravityAngle = 180; // Degrees, 180 = straight down
+        const GRAVITY_SCALE = 0.001; // Scale factor for simulation
+
+        // Atom colors and sizes
+        const atomProperties = {
+            H:  { color: 0xffffff, radius: 0.31 * SCALE },
+            O:  { color: 0xff4444, radius: 0.48 * SCALE },
+            N:  { color: 0x3333ff, radius: 0.46 * SCALE },
+            C:  { color: 0x333333, radius: 0.53 * SCALE },
+            S:  { color: 0xffff33, radius: 0.70 * SCALE },
+            Cl: { color: 0x33ff33, radius: 0.79 * SCALE },
+            Na: { color: 0x9933ff, radius: 1.02 * SCALE }
+        };
+
+        // Molecule definitions with electromagnetic properties
+        // charge: effective molecular charge/polarity (-1 to +1)
+        // dipoleMoment: strength of dipole (affects interaction strength)
+        // mass: relative molecular mass (affects acceleration)
+        // cohesion: how strongly molecules of same type attract (hydrogen bonding, etc.)
+        const moleculeDefinitions = {
+            H2O: {
+                name: "Water",
+                charge: -0.3, // Partial negative (oxygen pulls electrons)
+                dipoleMoment: 1.85,
+                mass: 18,
+                cohesion: 0.8, // Strong hydrogen bonding
+                atoms: [
+                    { element: 'O', position: [0, 0, 0] },
+                    { element: 'H', position: [0.96, 0.39, 0] },
+                    { element: 'H', position: [-0.96, 0.39, 0] }
+                ],
+                bonds: [[0, 1, 1], [0, 2, 1]]
+            },
+            CO2: {
+                name: "Carbon Dioxide",
+                charge: 0, // Nonpolar (symmetric)
+                dipoleMoment: 0,
+                mass: 44,
+                cohesion: 0.1, // Weak van der Waals only
+                atoms: [
+                    { element: 'C', position: [0, 0, 0] },
+                    { element: 'O', position: [1.16, 0, 0] },
+                    { element: 'O', position: [-1.16, 0, 0] }
+                ],
+                bonds: [[0, 1, 2], [0, 2, 2]]
+            },
+            O2: {
+                name: "Oxygen",
+                charge: 0, // Nonpolar
+                dipoleMoment: 0,
+                mass: 32,
+                cohesion: 0.1,
+                atoms: [
+                    { element: 'O', position: [-0.6, 0, 0] },
+                    { element: 'O', position: [0.6, 0, 0] }
+                ],
+                bonds: [[0, 1, 2]]
+            },
+            N2: {
+                name: "Nitrogen",
+                charge: 0, // Nonpolar
+                dipoleMoment: 0,
+                mass: 28,
+                cohesion: 0.1,
+                atoms: [
+                    { element: 'N', position: [-0.55, 0, 0] },
+                    { element: 'N', position: [0.55, 0, 0] }
+                ],
+                bonds: [[0, 1, 3]]
+            },
+            H2: {
+                name: "Hydrogen",
+                charge: 0, // Nonpolar
+                dipoleMoment: 0,
+                mass: 2,
+                cohesion: 0.05,
+                atoms: [
+                    { element: 'H', position: [-0.37, 0, 0] },
+                    { element: 'H', position: [0.37, 0, 0] }
+                ],
+                bonds: [[0, 1, 1]]
+            },
+            CH4: {
+                name: "Methane",
+                charge: 0, // Nonpolar (symmetric)
+                dipoleMoment: 0,
+                mass: 16,
+                cohesion: 0.15,
+                atoms: [
+                    { element: 'C', position: [0, 0, 0] },
+                    { element: 'H', position: [0.63, 0.63, 0.63] },
+                    { element: 'H', position: [-0.63, -0.63, 0.63] },
+                    { element: 'H', position: [-0.63, 0.63, -0.63] },
+                    { element: 'H', position: [0.63, -0.63, -0.63] }
+                ],
+                bonds: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1]]
+            },
+            NH3: {
+                name: "Ammonia",
+                charge: -0.25, // Partial negative (nitrogen pulls electrons)
+                dipoleMoment: 1.47,
+                mass: 17,
+                cohesion: 0.6, // Hydrogen bonding
+                atoms: [
+                    { element: 'N', position: [0, 0.12, 0] },
+                    { element: 'H', position: [0.94, -0.35, 0] },
+                    { element: 'H', position: [-0.47, -0.35, 0.81] },
+                    { element: 'H', position: [-0.47, -0.35, -0.81] }
+                ],
+                bonds: [[0, 1, 1], [0, 2, 1], [0, 3, 1]]
+            },
+            H2SO4: {
+                name: "Sulfuric Acid",
+                charge: 0.4, // Acidic, tends to donate H+
+                dipoleMoment: 2.7,
+                mass: 98,
+                cohesion: 0.7, // Strong polar interactions
+                atoms: [
+                    { element: 'S', position: [0, 0, 0] },
+                    { element: 'O', position: [1.2, 0.7, 0] },
+                    { element: 'O', position: [-1.2, 0.7, 0] },
+                    { element: 'O', position: [0.7, -1.0, 0.5] },
+                    { element: 'O', position: [-0.7, -1.0, -0.5] },
+                    { element: 'H', position: [1.8, 1.3, 0] },
+                    { element: 'H', position: [-1.8, 1.3, 0] }
+                ],
+                bonds: [[0, 1, 1], [0, 2, 1], [0, 3, 2], [0, 4, 2], [1, 5, 1], [2, 6, 1]]
+            },
+            HCl: {
+                name: "Hydrogen Chloride",
+                charge: -0.2, // Polar, Cl pulls electrons
+                dipoleMoment: 1.08,
+                mass: 36.5,
+                cohesion: 0.4,
+                atoms: [
+                    { element: 'H', position: [-0.64, 0, 0] },
+                    { element: 'Cl', position: [0.64, 0, 0] }
+                ],
+                bonds: [[0, 1, 1]]
+            },
+            NaCl: {
+                name: "Sodium Chloride",
+                charge: 0, // Ion pair, but neutral overall
+                dipoleMoment: 9.0, // Very high dipole
+                mass: 58.5,
+                cohesion: 0.9, // Very strong ionic attraction
+                atoms: [
+                    { element: 'Na', position: [-1.2, 0, 0] },
+                    { element: 'Cl', position: [1.2, 0, 0] }
+                ],
+                bonds: [[0, 1, 1]]
+            },
+            C2H6: {
+                name: "Ethane",
+                charge: 0, // Nonpolar
+                dipoleMoment: 0,
+                mass: 30,
+                cohesion: 0.2,
+                atoms: [
+                    { element: 'C', position: [-0.77, 0, 0] },
+                    { element: 'C', position: [0.77, 0, 0] },
+                    { element: 'H', position: [-1.17, 0.63, 0.78] },
+                    { element: 'H', position: [-1.17, 0.35, -0.92] },
+                    { element: 'H', position: [-1.17, -0.98, 0.14] },
+                    { element: 'H', position: [1.17, -0.63, -0.78] },
+                    { element: 'H', position: [1.17, -0.35, 0.92] },
+                    { element: 'H', position: [1.17, 0.98, -0.14] }
+                ],
+                bonds: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1], [1, 5, 1], [1, 6, 1], [1, 7, 1]]
+            },
+            C2H4: {
+                name: "Ethylene",
+                charge: 0, // Nonpolar
+                dipoleMoment: 0,
+                mass: 28,
+                cohesion: 0.2,
+                atoms: [
+                    { element: 'C', position: [-0.67, 0, 0] },
+                    { element: 'C', position: [0.67, 0, 0] },
+                    { element: 'H', position: [-1.24, 0.93, 0] },
+                    { element: 'H', position: [-1.24, -0.93, 0] },
+                    { element: 'H', position: [1.24, 0.93, 0] },
+                    { element: 'H', position: [1.24, -0.93, 0] }
+                ],
+                bonds: [[0, 1, 2], [0, 2, 1], [0, 3, 1], [1, 4, 1], [1, 5, 1]]
+            }
+        };
+
+        // Environment state
+        const environmentState = {};
+        const moleculeInstances = {}; // Maps formula -> array of molecule objects
+
+        // Initialize state
+        Object.keys(moleculeDefinitions).forEach(formula => {
+            environmentState[formula] = 0;
+            moleculeInstances[formula] = [];
+        });
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a2e);
+
+        // Camera
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+        camera.position.z = 8;
+
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 5, 5);
+        scene.add(directionalLight);
+
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+        directionalLight2.position.set(-5, -5, -5);
+        scene.add(directionalLight2);
+
+        // Add boundary box visualization
+        let boundaryLine;
+        const boundaryMaterial = new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: 0.3 });
+
+        function updateBoundaryBox() {
+            if (boundaryLine) {
+                scene.remove(boundaryLine);
+                boundaryLine.geometry.dispose();
+            }
+            const boundaryGeometry = new THREE.BoxGeometry(boundaryX * 2, boundaryY * 2, boundaryZ * 2);
+            const boundaryEdges = new THREE.EdgesGeometry(boundaryGeometry);
+            boundaryLine = new THREE.LineSegments(boundaryEdges, boundaryMaterial);
+            scene.add(boundaryLine);
+
+            // Clamp existing molecules inside new boundaries
+            const allMolecules = Object.values(moleculeInstances).flat();
+            for (const mol of allMolecules) {
+                const pos = mol.mesh.position;
+                pos.x = Math.max(-boundaryX, Math.min(boundaryX, pos.x));
+                pos.y = Math.max(-boundaryY, Math.min(boundaryY, pos.y));
+                pos.z = Math.max(-boundaryZ, Math.min(boundaryZ, pos.z));
+            }
+        }
+        updateBoundaryBox();
+
+        // Shared geometries
+        const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+        const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 16);
+
+        // Create bond between two positions
+        function createBond(start, end, order) {
+            const group = new THREE.Group();
+            const direction = new THREE.Vector3().subVectors(end, start);
+            const length = direction.length();
+            const bondRadius = 0.06 * SCALE;
+            const spacing = 0.15 * SCALE;
+
+            const material = new THREE.MeshPhongMaterial({
+                color: 0x666666,
+                shininess: 30
+            });
+
+            for (let i = 0; i < order; i++) {
+                const bond = new THREE.Mesh(cylinderGeometry, material);
+                bond.scale.set(bondRadius, length, bondRadius);
+                bond.position.copy(start).add(end).multiplyScalar(0.5);
+                bond.quaternion.setFromUnitVectors(
+                    new THREE.Vector3(0, 1, 0),
+                    direction.clone().normalize()
+                );
+
+                if (order > 1) {
+                    const offset = (i - (order - 1) / 2) * spacing;
+                    const perpendicular = new THREE.Vector3(1, 0, 0);
+                    if (Math.abs(direction.x) > 0.9) {
+                        perpendicular.set(0, 1, 0);
+                    }
+                    perpendicular.cross(direction).normalize().multiplyScalar(offset);
+                    bond.position.add(perpendicular);
+                }
+
+                group.add(bond);
+            }
+
+            return group;
+        }
+
+        // Create a molecule instance with physics properties
+        function createMoleculeInstance(formula) {
+            const moleculeData = moleculeDefinitions[formula];
+            const mesh = new THREE.Group();
+            mesh.userData.formula = formula;
+
+            const positions = [];
+
+            // Create atoms
+            moleculeData.atoms.forEach((atom) => {
+                const props = atomProperties[atom.element];
+                const material = new THREE.MeshPhongMaterial({
+                    color: props.color,
+                    shininess: 100,
+                    specular: 0x444444
+                });
+
+                const atomMesh = new THREE.Mesh(sphereGeometry, material);
+                atomMesh.scale.setScalar(props.radius);
+                const scaledPos = atom.position.map(p => p * SCALE);
+                atomMesh.position.set(...scaledPos);
+                mesh.add(atomMesh);
+
+                positions.push(new THREE.Vector3(...scaledPos));
+            });
+
+            // Create bonds
+            moleculeData.bonds.forEach(bond => {
+                const [atom1, atom2, order] = bond;
+                const bondMesh = createBond(positions[atom1], positions[atom2], order);
+                mesh.add(bondMesh);
+            });
+
+            // Random position in space
+            mesh.position.set(
+                (Math.random() - 0.5) * boundaryX * 1.6,
+                (Math.random() - 0.5) * boundaryY * 1.6,
+                (Math.random() - 0.5) * boundaryZ * 1.6
+            );
+
+            // Random rotation
+            mesh.rotation.set(
+                Math.random() * Math.PI * 2,
+                Math.random() * Math.PI * 2,
+                Math.random() * Math.PI * 2
+            );
+
+            // Create molecule object with physics properties
+            const molecule = {
+                mesh: mesh,
+                formula: formula,
+                velocity: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.5,
+                    (Math.random() - 0.5) * 0.5,
+                    (Math.random() - 0.5) * 0.5
+                ),
+                angularVelocity: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.1,
+                    (Math.random() - 0.5) * 0.1,
+                    (Math.random() - 0.5) * 0.1
+                ),
+                charge: moleculeData.charge,
+                dipoleMoment: moleculeData.dipoleMoment,
+                mass: moleculeData.mass,
+                cohesion: moleculeData.cohesion || 0.1,
+                radius: 0.3 * SCALE * Math.cbrt(moleculeData.mass) // Approximate radius based on mass
+            };
+
+            return molecule;
+        }
+
+        // Calculate cohesion force (attraction between similar/polar molecules)
+        function cohesionForce(mol1, mol2, distance, direction) {
+            // Same molecule types have stronger attraction (hydrogen bonding, etc.)
+            const sameMolecule = mol1.formula === mol2.formula;
+            const cohesionStrength = sameMolecule
+                ? (mol1.cohesion + mol2.cohesion)
+                : (mol1.cohesion * mol2.cohesion); // Weaker between different types
+
+            // Attractive force that falls off with distance, but not as fast as Coulomb
+            // Optimal distance is around 2-3x the molecular radius
+            const optimalDist = (mol1.radius + mol2.radius) * 3;
+            const distRatio = distance / optimalDist;
+
+            // Attraction when far, repulsion when too close
+            let forceMagnitude = 0;
+            if (distance > optimalDist * 0.5) {
+                // Attractive region - pulls molecules together
+                forceMagnitude = -cohesionStrength * 0.3 / (distRatio * distRatio);
+            }
+
+            return direction.clone().multiplyScalar(forceMagnitude);
+        }
+
+        // Calculate viscosity/drag between nearby molecules (momentum transfer)
+        function viscosityForce(mol1, mol2, distance) {
+            // Only apply viscosity to nearby molecules
+            const viscosityRange = (mol1.radius + mol2.radius) * 5;
+            if (distance > viscosityRange) return new THREE.Vector3(0, 0, 0);
+
+            // Viscosity tries to equalize velocities between neighbors
+            const viscosityStrength = 0.02 * (mol1.cohesion + mol2.cohesion);
+            const velocityDiff = new THREE.Vector3().subVectors(mol2.velocity, mol1.velocity);
+
+            // Closer molecules have more momentum transfer
+            const falloff = 1 - (distance / viscosityRange);
+
+            return velocityDiff.multiplyScalar(viscosityStrength * falloff);
+        }
+
+        // Calculate Coulomb force between two molecules
+        function coulombForce(mol1, mol2, distance, direction) {
+            // F = k * q1 * q2 / r^2
+            // Like charges repel (positive force), opposite charges attract (negative force)
+            const q1 = mol1.charge + mol1.dipoleMoment * 0.1; // Include dipole contribution
+            const q2 = mol2.charge + mol2.dipoleMoment * 0.1;
+
+            if (Math.abs(q1) < 0.01 && Math.abs(q2) < 0.01) {
+                // Both essentially neutral - weak van der Waals attraction
+                return direction.clone().multiplyScalar(-0.001 / (distance * distance));
+            }
+
+            const forceMagnitude = COULOMB_K * q1 * q2 / (distance * distance);
+            return direction.clone().multiplyScalar(forceMagnitude);
+        }
+
+        // Calculate Lennard-Jones potential force (short-range repulsion, weak attraction)
+        function lennardJonesForce(mol1, mol2, distance, direction) {
+            // LJ potential: V(r) = 4ε[(σ/r)^12 - (σ/r)^6]
+            // Force: F(r) = 24ε/r * [2(σ/r)^12 - (σ/r)^6]
+            const sigma = (mol1.radius + mol2.radius) * 2;
+            const sigmaOverR = sigma / distance;
+            const sigmaOverR6 = Math.pow(sigmaOverR, 6);
+            const sigmaOverR12 = sigmaOverR6 * sigmaOverR6;
+
+            const forceMagnitude = 24 * LJ_EPSILON / distance * (2 * sigmaOverR12 - sigmaOverR6);
+            return direction.clone().multiplyScalar(forceMagnitude);
+        }
+
+        // Update physics for all molecules
+        function updatePhysics() {
+            const allMolecules = Object.values(moleculeInstances).flat();
+
+            if (allMolecules.length < 1) return;
+
+            // Calculate forces between all pairs
+            for (let i = 0; i < allMolecules.length; i++) {
+                const mol1 = allMolecules[i];
+                const force = new THREE.Vector3(0, 0, 0);
+
+                for (let j = 0; j < allMolecules.length; j++) {
+                    if (i === j) continue;
+
+                    const mol2 = allMolecules[j];
+                    const direction = new THREE.Vector3().subVectors(
+                        mol1.mesh.position,
+                        mol2.mesh.position
+                    );
+                    const distance = direction.length();
+
+                    if (distance < 0.01) continue; // Avoid division by zero
+
+                    direction.normalize();
+
+                    // Coulomb force (electromagnetic)
+                    const fCoulomb = coulombForce(mol1, mol2, distance, direction);
+                    force.add(fCoulomb);
+
+                    // Lennard-Jones force (collision/short-range)
+                    if (distance < (mol1.radius + mol2.radius) * 4) {
+                        const fLJ = lennardJonesForce(mol1, mol2, distance, direction);
+                        force.add(fLJ);
+                    }
+
+                    // Cohesion force (hydrogen bonding, molecular attraction)
+                    const fCohesion = cohesionForce(mol1, mol2, distance, direction);
+                    force.add(fCohesion);
+
+                    // Viscosity (momentum transfer between nearby molecules)
+                    const fViscosity = viscosityForce(mol1, mol2, distance);
+                    force.add(fViscosity);
+                }
+
+                // Clamp force to prevent instability
+                if (force.length() > MAX_FORCE) {
+                    force.normalize().multiplyScalar(MAX_FORCE);
+                }
+
+                // Apply force: F = ma, so a = F/m
+                const acceleration = force.divideScalar(mol1.mass * 0.1);
+                mol1.velocity.add(acceleration.multiplyScalar(DT));
+
+                // Apply damping
+                mol1.velocity.multiplyScalar(DAMPING);
+
+                // Cap velocity (increased to allow high-temperature movement)
+                if (mol1.velocity.length() > 10) {
+                    mol1.velocity.normalize().multiplyScalar(10);
+                }
+            }
+
+            // Update positions and handle boundaries
+            for (const mol of allMolecules) {
+                // Apply gravity (F = mg, a = g)
+                // Gravity direction based on angle (180° = down, 0° = up, 90° = right)
+                if (gravity > 0) {
+                    const angleRad = gravityAngle * Math.PI / 180;
+                    const gForce = gravity * GRAVITY_SCALE * mol.mass * 0.1;
+                    mol.velocity.x += gForce * Math.sin(angleRad);
+                    mol.velocity.y += gForce * Math.cos(angleRad);
+                }
+
+                // Update position
+                mol.mesh.position.add(mol.velocity.clone().multiplyScalar(DT));
+
+                // Update rotation
+                mol.mesh.rotation.x += mol.angularVelocity.x * DT;
+                mol.mesh.rotation.y += mol.angularVelocity.y * DT;
+                mol.mesh.rotation.z += mol.angularVelocity.z * DT;
+
+                // Boundary collision (elastic)
+                const pos = mol.mesh.position;
+                const bounce = 0.8;
+
+                if (pos.x > boundaryX) { pos.x = boundaryX; mol.velocity.x *= -bounce; }
+                if (pos.x < -boundaryX) { pos.x = -boundaryX; mol.velocity.x *= -bounce; }
+                if (pos.y > boundaryY) { pos.y = boundaryY; mol.velocity.y *= -bounce; }
+                if (pos.y < -boundaryY) { pos.y = -boundaryY; mol.velocity.y *= -bounce; }
+                if (pos.z > boundaryZ) { pos.z = boundaryZ; mol.velocity.z *= -bounce; }
+                if (pos.z < -boundaryZ) { pos.z = -boundaryZ; mol.velocity.z *= -bounce; }
+            }
+        }
+
+        // Get target velocity based on system energy and molecule mass
+        // Based on kinetic theory: KE = (3/2)kT, and KE = (1/2)mv²
+        // So v = sqrt(3kT/m) - lighter molecules move faster at same temperature
+        function getTargetSpeed(mass) {
+            const temperature = MIN_TEMP + (systemEnergy / 100) * (MAX_TEMP - MIN_TEMP);
+            // Scale factor to make velocities visible in simulation
+            const kB = 0.003; // Scaled Boltzmann constant for visualization
+            return Math.sqrt(3 * kB * temperature / (mass * 0.1));
+        }
+
+        // Distribute energy among all molecules
+        function distributeEnergy() {
+            const allMolecules = Object.values(moleculeInstances).flat();
+
+            for (const mol of allMolecules) {
+                const targetSpeed = getTargetSpeed(mol.mass);
+                const currentSpeed = mol.velocity.length();
+
+                if (currentSpeed < 0.001) {
+                    // Give random direction if stationary
+                    mol.velocity.set(
+                        (Math.random() - 0.5),
+                        (Math.random() - 0.5),
+                        (Math.random() - 0.5)
+                    ).normalize().multiplyScalar(targetSpeed);
+                } else {
+                    // Gently nudge speed towards target (not override)
+                    // This allows cohesion/viscosity effects to accumulate
+                    // Adjustment rate scales with temperature for faster response at high energy
+                    const adjustmentRate = 0.01 + (systemEnergy / 100) * 0.05;
+                    const newSpeed = currentSpeed + (targetSpeed - currentSpeed) * adjustmentRate;
+
+                    // Add small random thermal fluctuations (Brownian motion)
+                    // Scale with temperature for more chaos at high energy
+                    const brownianScale = 0.05 * (1 + systemEnergy / 50);
+                    mol.velocity.x += (Math.random() - 0.5) * targetSpeed * brownianScale;
+                    mol.velocity.y += (Math.random() - 0.5) * targetSpeed * brownianScale;
+                    mol.velocity.z += (Math.random() - 0.5) * targetSpeed * brownianScale;
+
+                    // Scale to target speed range (but preserve direction from physics)
+                    const speedNow = mol.velocity.length();
+                    if (speedNow > 0.001) {
+                        mol.velocity.multiplyScalar(newSpeed / speedNow);
+                    }
+                }
+
+                // Also adjust angular velocity based on energy
+                const angularTarget = targetSpeed * 0.3;
+                mol.angularVelocity.x += (angularTarget * (Math.random() - 0.5) - mol.angularVelocity.x) * 0.01;
+                mol.angularVelocity.y += (angularTarget * (Math.random() - 0.5) - mol.angularVelocity.y) * 0.01;
+                mol.angularVelocity.z += (angularTarget * (Math.random() - 0.5) - mol.angularVelocity.z) * 0.01;
+            }
+        }
+
+        // Update energy slider display
+        function updateEnergyDisplay() {
+            const temperature = Math.round(MIN_TEMP + (systemEnergy / 100) * (MAX_TEMP - MIN_TEMP));
+            document.getElementById('energy-value').textContent = systemEnergy.toFixed(2);
+
+            let tempLabel = `~${temperature} K`;
+            if (temperature < 10) tempLabel += ' (Near Absolute Zero)';
+            else if (temperature < 100) tempLabel += ' (Cryogenic)';
+            else if (temperature < 273) tempLabel += ' (Freezing)';
+            else if (temperature < 373) tempLabel += ' (Room Temp)';
+            else if (temperature < 600) tempLabel += ' (Hot)';
+            else if (temperature < 1000) tempLabel += ' (Very Hot)';
+            else if (temperature < 2000) tempLabel += ' (Extreme)';
+            else if (temperature < 3000) tempLabel += ' (Plasma-like)';
+            else tempLabel += ' (Solar Surface)';
+
+            document.getElementById('temperature').textContent = tempLabel;
+        }
+
+        // Add a molecule to the environment
+        function addMolecule(formula) {
+            const molecule = createMoleculeInstance(formula);
+            // Set initial velocity based on current energy
+            const targetSpeed = getTargetSpeed(molecule.mass);
+            molecule.velocity.normalize().multiplyScalar(targetSpeed);
+            scene.add(molecule.mesh);
+            moleculeInstances[formula].push(molecule);
+            environmentState[formula]++;
+            updateUI();
+        }
+
+        // Add multiple molecules at once
+        function addMolecules(formula, count) {
+            for (let i = 0; i < count; i++) {
+                const molecule = createMoleculeInstance(formula);
+                const targetSpeed = getTargetSpeed(molecule.mass);
+                molecule.velocity.normalize().multiplyScalar(targetSpeed);
+                scene.add(molecule.mesh);
+                moleculeInstances[formula].push(molecule);
+                environmentState[formula]++;
+            }
+            updateUI();
+        }
+
+        // Remove a random molecule of the given type
+        function removeMolecule(formula) {
+            if (moleculeInstances[formula].length === 0) return;
+
+            const randomIndex = Math.floor(Math.random() * moleculeInstances[formula].length);
+            const molecule = moleculeInstances[formula][randomIndex];
+            scene.remove(molecule.mesh);
+            moleculeInstances[formula].splice(randomIndex, 1);
+            environmentState[formula]--;
+            updateUI();
+        }
+
+        // Remove multiple molecules at once
+        function removeMolecules(formula, count) {
+            const toRemove = Math.min(count, moleculeInstances[formula].length);
+            for (let i = 0; i < toRemove; i++) {
+                const randomIndex = Math.floor(Math.random() * moleculeInstances[formula].length);
+                const molecule = moleculeInstances[formula][randomIndex];
+                scene.remove(molecule.mesh);
+                moleculeInstances[formula].splice(randomIndex, 1);
+                environmentState[formula]--;
+            }
+            updateUI();
+        }
+
+        // Update UI to reflect current state
+        function updateUI() {
+            Object.keys(moleculeDefinitions).forEach(formula => {
+                const quantityEl = document.getElementById(`qty-${formula}`);
+                const removeBtn = document.getElementById(`remove-${formula}`);
+                const remove10Btn = document.getElementById(`remove10-${formula}`);
+                if (quantityEl) {
+                    quantityEl.textContent = environmentState[formula];
+                }
+                if (removeBtn) {
+                    removeBtn.disabled = environmentState[formula] === 0;
+                }
+                if (remove10Btn) {
+                    remove10Btn.disabled = environmentState[formula] === 0;
+                }
+            });
+
+            const total = Object.values(environmentState).reduce((a, b) => a + b, 0);
+            document.getElementById('total-count').textContent = `Total molecules: ${total}`;
+        }
+
+        // Reset all molecules
+        function resetAll() {
+            Object.keys(moleculeDefinitions).forEach(formula => {
+                moleculeInstances[formula].forEach(mol => {
+                    scene.remove(mol.mesh);
+                });
+                moleculeInstances[formula] = [];
+                environmentState[formula] = 0;
+            });
+            updateUI();
+        }
+
+        // Get charge class for styling
+        function getChargeClass(charge) {
+            if (charge > 0.1) return 'positive';
+            if (charge < -0.1) return 'negative';
+            return 'neutral';
+        }
+
+        // Hold-to-repeat functionality
+        function setupHoldButton(button, action) {
+            let intervalId = null;
+            let timeoutId = null;
+            const initialDelay = 300; // ms before repeat starts
+            const repeatInterval = 80; // ms between repeats
+
+            const startAction = (e) => {
+                e.preventDefault();
+                action(); // Initial action
+                timeoutId = setTimeout(() => {
+                    intervalId = setInterval(action, repeatInterval);
+                }, initialDelay);
+            };
+
+            const stopAction = () => {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
+                if (intervalId) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
+            };
+
+            button.addEventListener('mousedown', startAction);
+            button.addEventListener('mouseup', stopAction);
+            button.addEventListener('mouseleave', stopAction);
+            button.addEventListener('touchstart', startAction);
+            button.addEventListener('touchend', stopAction);
+            button.addEventListener('touchcancel', stopAction);
+        }
+
+        // Build the compound list UI
+        function buildUI() {
+            const listEl = document.getElementById('compound-list');
+            listEl.innerHTML = '';
+
+            Object.keys(moleculeDefinitions).forEach(formula => {
+                const def = moleculeDefinitions[formula];
+                const row = document.createElement('div');
+                row.className = 'compound-row';
+
+                const chargeLabel = def.charge > 0 ? `+${def.charge.toFixed(1)}` : def.charge.toFixed(1);
+                const chargeClass = getChargeClass(def.charge);
+
+                row.innerHTML = `
+                    <div class="compound-name">
+                        <div class="compound-formula">${formula}</div>
+                        <div class="compound-fullname">${def.name}</div>
+                        <div class="compound-charge ${chargeClass}">q: ${chargeLabel} | μ: ${def.dipoleMoment}</div>
+                    </div>
+                    <button class="btn btn-remove btn-bulk" id="remove10-${formula}" disabled>«</button>
+                    <button class="btn btn-remove" id="remove-${formula}" disabled>−</button>
+                    <div class="compound-quantity" id="qty-${formula}">0</div>
+                    <button class="btn btn-add" id="add-${formula}">+</button>
+                    <button class="btn btn-add btn-bulk" id="add10-${formula}">»</button>
+                `;
+
+                listEl.appendChild(row);
+
+                // Add hold-to-repeat event listeners
+                const addBtn = document.getElementById(`add-${formula}`);
+                const removeBtn = document.getElementById(`remove-${formula}`);
+                const add10Btn = document.getElementById(`add10-${formula}`);
+                const remove10Btn = document.getElementById(`remove10-${formula}`);
+
+                setupHoldButton(addBtn, () => addMolecule(formula));
+                setupHoldButton(removeBtn, () => removeMolecule(formula));
+                setupHoldButton(add10Btn, () => addMolecules(formula, 10));
+                setupHoldButton(remove10Btn, () => removeMolecules(formula, 10));
+            });
+        }
+
+        // Orbit controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 1;
+        controls.maxDistance = 20;
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update presets animation
+            updatePresets();
+
+            // Update physics
+            updatePhysics();
+
+            // Continuously distribute energy to maintain temperature
+            distributeEnergy();
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        buildUI();
+        document.getElementById('reset-btn').addEventListener('click', resetAll);
+
+        // Energy slider
+        const energySlider = document.getElementById('energy-slider');
+        energySlider.addEventListener('input', (e) => {
+            systemEnergy = parseInt(e.target.value);
+            updateEnergyDisplay();
+        });
+        updateEnergyDisplay(); // Initialize display
+
+        // Gravity dropdown
+        const gravitySelect = document.getElementById('gravity-select');
+        gravitySelect.addEventListener('change', (e) => {
+            gravity = parseFloat(e.target.value);
+        });
+
+        // Gravity angle slider
+        const gravityAngleSlider = document.getElementById('gravity-angle');
+        gravityAngleSlider.addEventListener('input', (e) => {
+            gravityAngle = parseInt(e.target.value);
+            updateGravityAngleDisplay();
+        });
+
+        function updateGravityAngleDisplay() {
+            document.getElementById('gravity-angle-value').textContent = gravityAngle + '°';
+
+            // Update direction indicator with arrow
+            let arrow, direction;
+            if (gravityAngle >= 337.5 || gravityAngle < 22.5) {
+                arrow = '↑'; direction = 'Up';
+            } else if (gravityAngle >= 22.5 && gravityAngle < 67.5) {
+                arrow = '↗'; direction = 'Up-Right';
+            } else if (gravityAngle >= 67.5 && gravityAngle < 112.5) {
+                arrow = '→'; direction = 'Right';
+            } else if (gravityAngle >= 112.5 && gravityAngle < 157.5) {
+                arrow = '↘'; direction = 'Down-Right';
+            } else if (gravityAngle >= 157.5 && gravityAngle < 202.5) {
+                arrow = '↓'; direction = 'Down';
+            } else if (gravityAngle >= 202.5 && gravityAngle < 247.5) {
+                arrow = '↙'; direction = 'Down-Left';
+            } else if (gravityAngle >= 247.5 && gravityAngle < 292.5) {
+                arrow = '←'; direction = 'Left';
+            } else {
+                arrow = '↖'; direction = 'Up-Left';
+            }
+            document.getElementById('gravity-direction').textContent = arrow + ' ' + direction;
+        }
+        updateGravityAngleDisplay();
+
+        // Dimension sliders
+        const dimXSlider = document.getElementById('dim-x');
+        const dimYSlider = document.getElementById('dim-y');
+        const dimZSlider = document.getElementById('dim-z');
+
+        dimXSlider.addEventListener('input', (e) => {
+            boundaryX = parseFloat(e.target.value) / 2;
+            document.getElementById('dim-x-value').textContent = e.target.value;
+            updateBoundaryBox();
+        });
+
+        dimYSlider.addEventListener('input', (e) => {
+            boundaryY = parseFloat(e.target.value) / 2;
+            document.getElementById('dim-y-value').textContent = e.target.value;
+            updateBoundaryBox();
+        });
+
+        dimZSlider.addEventListener('input', (e) => {
+            boundaryZ = parseFloat(e.target.value) / 2;
+            document.getElementById('dim-z-value').textContent = e.target.value;
+            updateBoundaryBox();
+        });
+
+        // ============ PRESETS SYSTEM ============
+        let activePreset = null;
+        let presetStartTime = 0;
+        let presetPaused = false;
+        let presetPausedTime = 0;
+
+        // Helper to set UI controls to match internal state
+        function syncUIToState() {
+            document.getElementById('energy-slider').value = systemEnergy;
+            updateEnergyDisplay();
+            document.getElementById('gravity-select').value = gravity;
+            document.getElementById('gravity-angle').value = gravityAngle;
+            updateGravityAngleDisplay();
+            document.getElementById('dim-x').value = boundaryX * 2;
+            document.getElementById('dim-x-value').textContent = (boundaryX * 2).toFixed(1);
+            document.getElementById('dim-y').value = boundaryY * 2;
+            document.getElementById('dim-y-value').textContent = (boundaryY * 2).toFixed(1);
+            document.getElementById('dim-z').value = boundaryZ * 2;
+            document.getElementById('dim-z-value').textContent = (boundaryZ * 2).toFixed(1);
+            updateBoundaryBox();
+            updateUI();
+        }
+
+        // Preset definitions
+        const presets = [
+            {
+                id: 'boiling',
+                name: 'Boiling Water',
+                description: 'Watch water molecules transition from liquid to gas as temperature rises.',
+                duration: 15000,
+                setup: () => {
+                    resetAll();
+                    systemEnergy = 10;
+                    gravity = 9.81;
+                    gravityAngle = 180;
+                    boundaryX = 2; boundaryY = 2; boundaryZ = 2;
+                    syncUIToState();
+                    addMolecules('H2O', 60);
+                },
+                animate: (progress) => {
+                    systemEnergy = 10 + progress * 90;
+                    document.getElementById('energy-slider').value = systemEnergy;
+                    updateEnergyDisplay();
+                }
+            },
+            {
+                id: 'lava-lamp',
+                name: 'Lava Lamp',
+                description: 'Mesmerizing oscillation of energy creates rising and falling blobs.',
+                duration: 20000,
+                loop: true,
+                setup: () => {
+                    resetAll();
+                    systemEnergy = 30;
+                    gravity = 9.81;
+                    gravityAngle = 180;
+                    boundaryX = 1.5; boundaryY = 3; boundaryZ = 1.5;
+                    syncUIToState();
+                    addMolecules('H2O', 50);
+                    addMolecules('H2SO4', 10);
+                },
+                animate: (progress) => {
+                    systemEnergy = 30 + Math.sin(progress * Math.PI * 4) * 25;
+                    document.getElementById('energy-slider').value = systemEnergy;
+                    updateEnergyDisplay();
+                }
+            },
+            {
+                id: 'centrifuge',
+                name: 'Centrifuge',
+                description: 'Rotating gravity separates molecules by mass - heavy ones fly outward.',
+                duration: 12000,
+                loop: true,
+                setup: () => {
+                    resetAll();
+                    systemEnergy = 40;
+                    gravity = 24.79;
+                    gravityAngle = 180;
+                    boundaryX = 2.5; boundaryY = 2.5; boundaryZ = 2.5;
+                    syncUIToState();
+                    addMolecules('H2', 30);
+                    addMolecules('H2O', 20);
+                    addMolecules('H2SO4', 15);
+                },
+                animate: (progress) => {
+                    gravityAngle = (progress * 720) % 360;
+                    document.getElementById('gravity-angle').value = gravityAngle;
+                    updateGravityAngleDisplay();
+                }
+            },
+            {
+                id: 'sedimentation',
+                name: 'Sedimentation',
+                description: 'Heavy molecules sink while light ones float - like sand settling in water.',
+                duration: 10000,
+                setup: () => {
+                    resetAll();
+                    systemEnergy = 25;
+                    gravity = 9.81;
+                    gravityAngle = 180;
+                    boundaryX = 2.5; boundaryY = 3; boundaryZ = 2.5;
+                    syncUIToState();
+                    addMolecules('H2', 25);
+                    addMolecules('O2', 20);
+                    addMolecules('CO2', 15);
+                    addMolecules('H2SO4', 10);
+                },
+                animate: (progress) => {
+                    // Just let physics run
+                }
+            },
+            {
+                id: 'condensation',
+                name: 'Condensation',
+                description: 'Cool down a hot gas and watch molecules cluster together.',
+                duration: 12000,
+                setup: () => {
+                    resetAll();
+                    systemEnergy = 95;
+                    gravity = 9.81;
+                    gravityAngle = 180;
+                    boundaryX = 2.5; boundaryY = 2.5; boundaryZ = 2.5;
+                    syncUIToState();
+                    addMolecules('H2O', 70);
+                },
+                animate: (progress) => {
+                    systemEnergy = 95 - progress * 85;
+                    document.getElementById('energy-slider').value = systemEnergy;
+                    updateEnergyDisplay();
+                }
+            },
+            {
+                id: 'shaking',
+                name: 'Shaking Bottle',
+                description: 'Simulate shaking a container - gravity oscillates back and forth.',
+                duration: 10000,
+                loop: true,
+                setup: () => {
+                    resetAll();
+                    systemEnergy = 30;
+                    gravity = 9.81;
+                    gravityAngle = 180;
+                    boundaryX = 2; boundaryY = 2.5; boundaryZ = 2;
+                    syncUIToState();
+                    addMolecules('H2O', 60);
+                },
+                animate: (progress) => {
+                    gravityAngle = 180 + Math.sin(progress * Math.PI * 8) * 60;
+                    document.getElementById('gravity-angle').value = gravityAngle;
+                    updateGravityAngleDisplay();
+                }
+            },
+            {
+                id: 'atmosphere',
+                name: 'Atmosphere Layers',
+                description: 'Different gases settle into layers by density, like Earth\'s atmosphere.',
+                duration: 15000,
+                setup: () => {
+                    resetAll();
+                    systemEnergy = 35;
+                    gravity = 9.81;
+                    gravityAngle = 180;
+                    boundaryX = 3; boundaryY = 3.5; boundaryZ = 3;
+                    syncUIToState();
+                    addMolecules('H2', 20);
+                    addMolecules('CH4', 15);
+                    addMolecules('N2', 20);
+                    addMolecules('O2', 20);
+                    addMolecules('CO2', 15);
+                },
+                animate: (progress) => {
+                    // Let physics settle
+                }
+            },
+            {
+                id: 'zero-g',
+                name: 'Zero Gravity',
+                description: 'Molecules float freely in space with only electromagnetic interactions.',
+                duration: 15000,
+                setup: () => {
+                    resetAll();
+                    systemEnergy = 40;
+                    gravity = 0;
+                    gravityAngle = 180;
+                    boundaryX = 2.5; boundaryY = 2.5; boundaryZ = 2.5;
+                    syncUIToState();
+                    addMolecules('H2O', 30);
+                    addMolecules('NH3', 20);
+                    addMolecules('NaCl', 10);
+                },
+                animate: (progress) => {
+                    // Just floating
+                }
+            },
+            {
+                id: 'compression',
+                name: 'Gas Compression',
+                description: 'Watch as the container shrinks, compressing gas molecules.',
+                duration: 10000,
+                setup: () => {
+                    resetAll();
+                    systemEnergy = 50;
+                    gravity = 0;
+                    gravityAngle = 180;
+                    boundaryX = 3; boundaryY = 3; boundaryZ = 3;
+                    syncUIToState();
+                    addMolecules('N2', 30);
+                    addMolecules('O2', 25);
+                },
+                animate: (progress) => {
+                    const size = 3 - progress * 2;
+                    boundaryX = size; boundaryY = size; boundaryZ = size;
+                    document.getElementById('dim-x').value = size * 2;
+                    document.getElementById('dim-y').value = size * 2;
+                    document.getElementById('dim-z').value = size * 2;
+                    document.getElementById('dim-x-value').textContent = (size * 2).toFixed(1);
+                    document.getElementById('dim-y-value').textContent = (size * 2).toFixed(1);
+                    document.getElementById('dim-z-value').textContent = (size * 2).toFixed(1);
+                    updateBoundaryBox();
+                }
+            },
+            {
+                id: 'mixing',
+                name: 'Chemical Mixing',
+                description: 'Acids and bases attract each other - watch polar molecules interact.',
+                duration: 12000,
+                setup: () => {
+                    resetAll();
+                    systemEnergy = 35;
+                    gravity = 9.81;
+                    gravityAngle = 180;
+                    boundaryX = 2.5; boundaryY = 2; boundaryZ = 2.5;
+                    syncUIToState();
+                    addMolecules('H2SO4', 15);
+                    addMolecules('NH3', 20);
+                    addMolecules('H2O', 25);
+                },
+                animate: (progress) => {
+                    // Watch interactions
+                }
+            }
+        ];
+
+        // Build presets UI
+        function buildPresetsUI() {
+            const container = document.getElementById('presets-list');
+            container.innerHTML = '';
+
+            presets.forEach(preset => {
+                const item = document.createElement('div');
+                item.className = 'preset-item';
+                item.id = `preset-${preset.id}`;
+
+                item.innerHTML = `
+                    <div class="preset-header">
+                        <span class="preset-name">${preset.name}</span>
+                        <div class="preset-controls">
+                            <button class="preset-btn preset-btn-play" id="play-${preset.id}" title="Play">▶</button>
+                            <button class="preset-btn preset-btn-stop" id="stop-${preset.id}" title="Stop" disabled>■</button>
+                        </div>
+                    </div>
+                    <div class="preset-description">${preset.description}</div>
+                    <div class="preset-progress">
+                        <div class="preset-progress-bar" id="progress-${preset.id}"></div>
+                    </div>
+                `;
+
+                container.appendChild(item);
+
+                // Event listeners
+                document.getElementById(`play-${preset.id}`).addEventListener('click', () => togglePreset(preset.id));
+                document.getElementById(`stop-${preset.id}`).addEventListener('click', () => stopPreset(preset.id));
+            });
+        }
+
+        function togglePreset(presetId) {
+            const preset = presets.find(p => p.id === presetId);
+            if (!preset) return;
+
+            if (activePreset && activePreset.id === presetId) {
+                // Toggle pause
+                if (presetPaused) {
+                    // Resume
+                    presetPaused = false;
+                    presetStartTime = Date.now() - presetPausedTime;
+                    updatePresetUI();
+                } else {
+                    // Pause
+                    presetPaused = true;
+                    presetPausedTime = Date.now() - presetStartTime;
+                    updatePresetUI();
+                }
+            } else {
+                // Start new preset
+                if (activePreset) {
+                    stopPreset(activePreset.id);
+                }
+                activePreset = preset;
+                presetStartTime = Date.now();
+                presetPaused = false;
+                presetPausedTime = 0;
+                preset.setup();
+                updatePresetUI();
+            }
+        }
+
+        function stopPreset(presetId) {
+            if (activePreset && activePreset.id === presetId) {
+                activePreset = null;
+                presetPaused = false;
+                presetPausedTime = 0;
+                updatePresetUI();
+            }
+        }
+
+        function updatePresetUI() {
+            presets.forEach(preset => {
+                const item = document.getElementById(`preset-${preset.id}`);
+                const playBtn = document.getElementById(`play-${preset.id}`);
+                const stopBtn = document.getElementById(`stop-${preset.id}`);
+                const progressBar = document.getElementById(`progress-${preset.id}`);
+
+                const isActive = activePreset && activePreset.id === preset.id;
+
+                item.classList.toggle('active', isActive);
+                playBtn.classList.toggle('playing', isActive && !presetPaused);
+
+                if (isActive) {
+                    playBtn.textContent = presetPaused ? '▶' : '❚❚';
+                    playBtn.title = presetPaused ? 'Resume' : 'Pause';
+                    stopBtn.disabled = false;
+                } else {
+                    playBtn.textContent = '▶';
+                    playBtn.title = 'Play';
+                    stopBtn.disabled = true;
+                    progressBar.style.width = '0%';
+                }
+            });
+        }
+
+        function updatePresets() {
+            if (!activePreset || presetPaused) return;
+
+            const elapsed = Date.now() - presetStartTime;
+            let progress = elapsed / activePreset.duration;
+
+            if (activePreset.loop) {
+                progress = progress % 1;
+            } else if (progress >= 1) {
+                progress = 1;
+                activePreset.animate(progress);
+                stopPreset(activePreset.id);
+                return;
+            }
+
+            activePreset.animate(progress);
+
+            // Update progress bar
+            const progressBar = document.getElementById(`progress-${activePreset.id}`);
+            if (progressBar) {
+                progressBar.style.width = (progress * 100) + '%';
+            }
+        }
+
+        buildPresetsUI();
+
+        animate();
+    </script>
+</body>
+</html>
